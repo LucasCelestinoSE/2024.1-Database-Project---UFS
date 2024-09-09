@@ -370,20 +370,6 @@ CREATE TABLE IF NOT EXISTS mydb.titulos_fisicos (
     ON UPDATE CASCADE
 );
 
--- Criar índice separadamente
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_class c
-    JOIN pg_namespace n ON n.oid = c.relnamespace
-    WHERE c.relname = 'fk_titulos_fisicos_reserva1_idx'
-    AND n.nspname = 'mydb'
-  ) THEN
-    CREATE INDEX fk_titulos_fisicos_reserva1_idx ON mydb.titulos_fisicos (reserva_idreserva);
-  END IF;
-END $$;
-
 -- -----------------------------------------------------
 -- Table mydb.exemplares
 -- -----------------------------------------------------
@@ -391,7 +377,7 @@ CREATE TABLE IF NOT EXISTS mydb.exemplares (
   numero_exemplares INT NOT NULL,
   status_exemplar VARCHAR(20) DEFAULT 'INDISPONÍVEL',
   isbn INT NOT NULL,
-  PRIMARY KEY (isbn),
+  PRIMARY KEY (numero_exemplares),
   CONSTRAINT fk_exemplares_titulos_fisicos1
     FOREIGN KEY (isbn)
     REFERENCES mydb.titulos_fisicos (isbn)
@@ -399,19 +385,6 @@ CREATE TABLE IF NOT EXISTS mydb.exemplares (
     ON UPDATE NO ACTION
 );
 
--- Criar índice separadamente
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_class c
-    JOIN pg_namespace n ON n.oid = c.relnamespace
-    WHERE c.relname = 'fk_exemplares_titulos_fisicos1_idx'
-    AND n.nspname = 'mydb'
-  ) THEN
-    CREATE INDEX fk_exemplares_titulos_fisicos1_idx ON mydb.exemplares (isbn ASC);
-  END IF;
-END $$;
 
 -- -----------------------------------------------------
 -- Table mydb.livro
@@ -709,5 +682,50 @@ BEGIN
     AND n.nspname = 'mydb'
   ) THEN
     CREATE INDEX fk_autor_has_titulos_fisicos_autor1_idx ON mydb.autor_has_titulos_fisicos (autor_idautor ASC);
+  END IF;
+END $$;
+-- -----------------------------------------------------
+-- Table mydb.emprestimo_exemplares
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS mydb.emprestimo_exemplares (
+  emprestimo_idemprestimo INT NOT NULL,
+  exemplares_numero_exemplares INT NOT NULL,
+  PRIMARY KEY (emprestimo_idemprestimo, exemplares_numero_exemplares),
+  CONSTRAINT fk_emprestimo_exemplares_emprestimo1
+    FOREIGN KEY (emprestimo_idemprestimo)
+    REFERENCES mydb.emprestimo (idemprestimo)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT fk_emprestimo_exemplares_exemplares1
+    FOREIGN KEY (exemplares_numero_exemplares)
+    REFERENCES mydb.exemplares (numero_exemplares)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION
+);
+
+-- Criar índices separadamente
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE c.relname = 'fk_emprestimo_exemplares_emprestimo1_idx'
+    AND n.nspname = 'mydb'
+  ) THEN
+    CREATE INDEX fk_emprestimo_exemplares_emprestimo1_idx ON mydb.emprestimo_exemplares (emprestimo_idemprestimo ASC);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE c.relname = 'fk_emprestimo_exemplares_exemplares1_idx'
+    AND n.nspname = 'mydb'
+  ) THEN
+    CREATE INDEX fk_emprestimo_exemplares_exemplares1_idx ON mydb.emprestimo_exemplares (exemplares_numero_exemplares ASC);
   END IF;
 END $$;
